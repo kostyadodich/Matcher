@@ -17,6 +17,7 @@ type AuthUser struct {
 
 type Claims struct {
 	Login string `json:"login"`
+	ID    int    `json:"id"`
 	jwt.StandardClaims
 }
 

@@ -26,18 +26,18 @@ func (a *AuthUser) Create(user model.AuthUser) error {
 	return nil
 }
 
-func (a *AuthUser) CheckExist(login string, password string) (bool, error) {
+func (a *AuthUser) CheckExist(login string, password string) (int, bool, error) {
+	var responseId int
 
-	auth := model.AuthUser{}
 	err := a.db.QueryRow(
-		`SELECT login, password FROM user_credentials WHERE login=$1 AND password=$2`,
+		`SELECT id FROM user_credentials WHERE login=$1 AND password=$2`,
 		login, password).Scan(
-		&auth.Login, &auth.Password)
+		&responseId)
 	if err == sql.ErrNoRows {
-		return false, err
+		return responseId, false, err
 	} else if err != nil {
-		return false, err
+		return responseId, false, err
 	}
 
-	return true, nil
+	return responseId, true, nil
 }

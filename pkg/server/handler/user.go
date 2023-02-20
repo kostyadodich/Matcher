@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.kostyadodich/demo/pkg/repository"
@@ -22,6 +23,10 @@ func NewUser(repo *repository.User) *User {
 }
 
 func (u *User) GetUsers(w http.ResponseWriter, r *http.Request) {
+
+	_ = r.Context().Value("user_id")
+
+	context.Background()
 
 	users, err := u.repo.List()
 	if err != nil {

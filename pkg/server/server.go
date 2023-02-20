@@ -1,7 +1,11 @@
 package server
 
 import (
+	"context"
+	"github.com/dgrijalva/jwt-go/v4"
+	"github.com/dgrijalva/jwt-go/v4/request"
 	"github.com/gorilla/mux"
+	"github.kostyadodich/demo/pkg/model"
 	"github.kostyadodich/demo/pkg/repository"
 	"github.kostyadodich/demo/pkg/server/handler"
 	"github.kostyadodich/demo/pkg/service/matcher"
@@ -39,6 +43,7 @@ func (s *Server) Serve() {
 	r := mux.NewRouter()
 
 	u := r.PathPrefix("/user").Subrouter()
+	u.Use(jwtMiddleware)
 	u.HandleFunc("/", userHandler.GetUsers).Methods("GET")
 	u.HandleFunc("/{id}", userHandler.GetUserByID).Methods("GET")
 	u.HandleFunc("/", userHandler.CreateUser).Methods("POST")
@@ -57,4 +62,26 @@ func (s *Server) Serve() {
 	auth.HandleFunc("/sign-in", userAuthHandler.SingIn).Methods("POST")
 
 	http.ListenAndServe(":8080", r)
+}
+
+func jwtMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Get token from request
+		token, err := request.ParseFromRequest(
+			r,
+			request.AuthorizationHeaderExtractor,
+			jwt.KnownKeyfunc(jwt.SigningMethodHS256, []byte("keykeykey")),
+			request.WithClaims(&model.Claims{}),
+		)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, "user_id", token.Claims.(*model.Claims).ID)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+		return
+	})
 }

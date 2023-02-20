@@ -130,11 +130,13 @@ func (d *Dialer) DeleteDialer(id int64) error {
 
 func (d *Dialer) GetByItem(itemId int64) ([]model.Dialer, error) {
 	row, err := d.db.Query(
-		`SELECT d.id, d.name, d.phone_number, json_agg(i) 
-				FROM dialers d JOIN dialer_item di ON d.id = di.dialer_id
-				JOIN items i ON i.id = di.item_id
-				WHERE di.item_id = 1
-				GROUP BY d.id, d.name, d.phone_number`, itemId)
+		`SELECT d.id, d.name, d.phone_number, json_agg(i) AS items
+				FROM dialers d
+				JOIN dialer_item di ON d.id = di.dialer_id
+				JOIN items i ON di.item_id = i.id
+				WHERE d.id IN
+					(SELECT d.id FROM dialers d JOIN dialer_item di ON d.id = di.dialer_id WHERE di.item_id = $1)
+					GROUP BY d.id`, itemId)
 	if err != nil {
 		return nil, err
 	}

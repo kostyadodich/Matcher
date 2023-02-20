@@ -34,7 +34,7 @@ func (a *AuthUser) SingIn(w http.ResponseWriter, r *http.Request) {
 
 	user.Password = user.GeneratePasswordHash(user.Password)
 
-	row, err := a.authRepo.CheckExist(user.Login, user.Password)
+	id, row, err := a.authRepo.CheckExist(user.Login, user.Password)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -46,9 +46,10 @@ func (a *AuthUser) SingIn(w http.ResponseWriter, r *http.Request) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &model.Claims{
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: jwt.At(time.Now().Add(10 * time.Minute)),
+			ExpiresAt: jwt.At(time.Now().Add(100 * time.Minute)),
 			IssuedAt:  jwt.At(time.Now())},
 		Login: user.Login,
+		ID:    id,
 	})
 
 	tokenRaw, err := token.SignedString([]byte("keykeykey"))
